@@ -51,10 +51,10 @@ File myFile;
 /*************Create new serial port on digital pins 10 and 12 of feather***********************/
 //Pin 10 and 12 are the common RX and TX for the UART multiplexer (74HCT4052PW)
 //The UART multiplexer is used to read GPS and two RS232 ports
-#define PIN_SERIAL2_RX       (34ul)               // Pin description number for PIO_SERCOM on D12
-#define PIN_SERIAL2_TX       (36ul)               // Pin description number for PIO_SERCOM on D10
-#define PAD_SERIAL2_TX       (UART_TX_PAD_2)      // SERCOM pad 2
-#define PAD_SERIAL2_RX       (SERCOM_RX_PAD_3)
+#define PIN_SERIAL2_RX       (34ul)                                           // Pin description number for PIO_SERCOM on D12
+#define PIN_SERIAL2_TX       (36ul)                                           // Pin description number for PIO_SERCOM on D10
+#define PAD_SERIAL2_TX       (UART_TX_PAD_2)                                  // SERCOM pad 2
+#define PAD_SERIAL2_RX       (SERCOM_RX_PAD_3)                                // SERCOM pad 3
 
 Uart Serial2(&sercom1, PIN_SERIAL2_RX, PIN_SERIAL2_TX, PAD_SERIAL2_RX, PAD_SERIAL2_TX);
 // Interrupt handler for SERCOM1
