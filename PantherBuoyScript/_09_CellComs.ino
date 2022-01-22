@@ -147,7 +147,7 @@ void GetModemTemp() {
 char* RegStatus1;
 char* RegStatus2;
 char* RegStatus3;
-int RegStatus;
+char* RegStatus;
 void GetReg() {
   pinMode(5, OUTPUT);
   digitalWrite(5, LOW);
@@ -157,10 +157,13 @@ void GetReg() {
   sendReceiveATCommand("AT+CREG?", "\r\nOK", "\r\nERROR", 3000);
   RegStatus1 = strtok(result_char, ":,");
   RegStatus2 = strtok(NULL, ",");
-  RegStatus3 = strtok(NULL, ",");
-  RegStatus = atoi(RegStatus3);
-
+  RegStatus = strtok(NULL, ",");
+  //RegStatus = atoi(RegStatus2);
+  Serial.println(RegStatus1);
+  Serial.println(RegStatus2);
+  Serial.println(RegStatus3);
 }
+
 
 //Function to send most buoy sensor data with the cellular modem
 //Modem specific data is also acquired here

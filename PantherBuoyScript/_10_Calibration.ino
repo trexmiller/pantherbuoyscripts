@@ -448,3 +448,136 @@ void ReadTempNodeInfo(){
   Serial.println(" Fahrenheit");
   } 
 }
+
+char ChlCalArray[4];
+int ChlCalPointsChoice;
+int TotalCalPoints;
+void CalChl(){  
+  Serial.println(F("Enter the total number of calibration points that will be measured not including the blank"));
+  
+  readChlCalInput();
+  TotalCalPoints = atoi(ChlCalArray);
+  Serial.print(F("Total calibration points = ")); Serial.println(TotalCalPoints);
+  
+  float CalChlConc[TotalCalPoints];
+  float CalChlResult[TotalCalPoints];
+
+  
+  Serial.println(F(""));
+  Serial.println(F("Place sensor in the blank solution lacking chlorophyll"));
+  Serial.println(F("Hit any key, enter and background fluorescence will be measured"));
+  readChlCalInput();
+  CalChlConc[0] = 0.00;
+  Serial.println(F("Got it. Measuring fluorescence in the blank (please wait)"));
+  Serial.println(F(""));
+  readChl();
+  CalChlResult[0] = ChlAvg;
+
+  /*
+  Serial.println(F(""));
+  Serial.println(F("Place sensor in the first standard solution containing chlorophyll"));
+  Serial.println(F("Enter the concentration of chlorophyll in ug/L, hit enter and fluorescence will be measured"));
+  readChlCalInput();
+  CalChlConc[1] = atof(ChlCalArray);;
+  Serial.println(F("Got it. Measuring fluorescence (please wait)"));
+  Serial.println(F(""));
+  readChl();
+  CalChlResult[1] = ChlAvg;
+  */
+  
+  for (int i = 1; i<TotalCalPoints; i++){
+    Serial.println(F(""));
+    Serial.print(F("Place sensor in standard solution "));Serial.println(i);
+    Serial.println(F("Enter the concentration of the standard solution, hit enter and fluorescence will be measured"));
+    readChlCalInput();
+    CalChlConc[i] = atof(ChlCalArray);
+    Serial.println(F("Got it. Measuring fluorescence (please wait)"));
+    Serial.println(F(""));
+    readChl();
+    CalChlResult[i] = ChlAvg;
+    }
+
+  /*
+  Serial.println(F(""));
+  Serial.println(F("Place sensor in the **last** standard solution"));
+  Serial.println(F("Enter the concentration of the last standard, hit enter and fluorescence will be measured"));
+  readChlCalInput();
+  CalChlConc[TotalCalPoints] = atof(ChlCalArray);
+  Serial.println(F("Got it. Measuring fluorescence (please wait)"));
+  Serial.println(F(""));
+  readChl();
+  CalChlResult[TotalCalPoints] = ChlAvg;
+  */
+  
+  Serial.println(F("Here are the results:")); 
+    Serial.print(F("Blank = ")); 
+    Serial.print(CalChlResult[0]); Serial.print(F(" mV")); 
+    Serial.print(F(" | ")); 
+    Serial.print(CalChlConc[0]); Serial.println(F(" ug/L")); 
+  for (int i = 1; i<TotalCalPoints; i++){
+    Serial.print(F("Standard ")); Serial.print(i); Serial.print(F(" = "));
+    Serial.print(CalChlResult[i]); Serial.print(F(" mV")); 
+    Serial.print(F(" | ")); 
+    Serial.print(CalChlConc[i]); Serial.println(F(" ug/L")); 
+   }
+  Serial.println(F(""));
+
+
+ float Ex;
+  float Ey;
+  float Exy;
+  float Ex2;
+  float Ey2;
+
+  for(int i = 0; i<TotalCalPoints; i++){
+    Ey += CalChlResult[i];
+  }
+
+  for(int i = 0; i<TotalCalPoints; i++){
+    Ex += CalChlConc[i];
+  }
+
+  for(int i = 0; i<TotalCalPoints; i++){
+    Exy += CalChlConc[i] * CalChlResult[i];
+  }
+
+  for(int i = 0; i<TotalCalPoints; i++){
+    Exy += CalChlConc[i] * CalChlResult[i];
+  }
+
+  for(int i = 0; i<TotalCalPoints; i++){
+    Ex2 += CalChlConc[i] * CalChlConc[i];
+  }
+
+  for(int i = 0; i<TotalCalPoints; i++){
+    Ey2 += CalChlResult[i] * CalChlResult[i];
+  }
+
+  float ChlSlope = ((TotalCalPoints*Exy) - (Ex * Ey))/((TotalCalPoints*Ex2)-(Ex * Ex));
+  float ChlOffset = (Ey - (ChlSlope * Ex))/TotalCalPoints;
+  float ChlR = ((TotalCalPoints * Exy) - Ex * Ey) / (sqrt((TotalCalPoints * Ex2) - (Ex * Ex)) * sqrt((TotalCalPoints * Ey2) - (Ey * Ey)));
+
+  Serial.print ("Chlorophyll calibration Slope = "); Serial.println(ChlSlope);
+  Serial.print ("Chlorophyll calibration Offset = "); Serial.println(ChlOffset);
+  Serial.print ("Chlorophyll calibration Regression R = "); Serial.println(ChlR);
+  Serial.println("");
+  Serial.println("");
+}
+
+
+
+
+
+
+  
+
+
+
+
+void readChlCalInput() {
+  while (Serial.available() == 0);       // wait for user input
+  for (int i = 0; i <= 4; i++) {
+    ChlCalArray[i] = Serial.read();       // read incoming data
+    delay(10);
+  }
+}

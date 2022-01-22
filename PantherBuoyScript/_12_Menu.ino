@@ -202,12 +202,13 @@ void DateTimeMenu(){
     Serial.println(F("********************************************************************************")); 
   return DateTimeMenu();
   break;
-  case '2':  
-      SetTime(); 
+  case '2': 
+    Serial.print(F("Setting date and time with modem (please wait).")); 
+    SetTime(); 
   return DateTimeMenu();
   break;
   case '3':  
-      Serial.println("Set date time with GPS"); 
+      Serial.println("Set date time with GPS (this is not yet implemented)"); 
   return DateTimeMenu();
   break;
   case '4':  
@@ -216,7 +217,7 @@ void DateTimeMenu(){
       Serial.println(F("."));
       Serial.println(F(".")); 
       Serial.println(F("")); 
-      Serial.println(F("Set date time manually")); 
+      Serial.println(F("Set date and time manually")); 
       RTC_Enter();
       
   return DateTimeMenu();
@@ -438,7 +439,14 @@ void networkMenu(){
       Serial.println(); 
       Serial.println(F("********************************************************************************"));
       GetReg();
-      Serial.print(F("Reg Status = ")); Serial.println(RegStatus);
+      Serial.print(F("Registration Status = ")); Serial.println(F(RegStatus));
+      Serial.println(F(""));
+      Serial.println(F("0 = Not registered, ME is not currently searching a new operator to register to"));
+      Serial.println(F("1 = Registered, home network"));
+      Serial.println(F("2 = Not registered, but ME is currently searching a new operator to register to"));
+      Serial.println(F("3 = Registration denied"));
+      Serial.println(F("4 = Unknown"));
+      Serial.println(F("5 = Registered, roaming"));
       Serial.println(F("********************************************************************************"));
     return networkMenu();
     break;
@@ -851,8 +859,13 @@ void calSensorsMenu(){
     return calSensorsMenu();
     break; 
   case '5':  
+      Serial.println();
+      Serial.println();  
+      Serial.println(F("********************************************************************************"));
+      Serial.println(F("Welcome to the chlorophyll sensor calibration function."));
+      Serial.println(F("Be sure to have chlorophyll standards prepared and the chlorophyll sensor connected to the buoy."));
       Serial.println(); 
-      Serial.println(F("Calibrate Chlorophyll"));
+      CalChl();
     return calSensorsMenu();
     break;  
   case '6': 

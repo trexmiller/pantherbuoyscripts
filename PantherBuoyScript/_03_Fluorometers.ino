@@ -31,7 +31,6 @@ void readChl() {
   GainVal = 0.01; //multiply by 0.01 for to normalize the reading by gain value of 100X
   delay(100);  //required after changing gains
   FluorRead(ChlPin);
-  Serial.print("Initial Chl Reading =  "); Serial.println(FluorAvg);
 
   //auto gain
   if (FluorAvg < 4400) {
@@ -49,7 +48,6 @@ void readChl() {
     FluorRead(ChlPin);
     ChlAvg = FluorAvg * GainVal;
     ChlStd = FluorStd * GainVal;
-    Serial.print("10X Reading =  "); Serial.println(FluorAvg);
   }
 
   if (FluorAvg > 4400) {
@@ -61,11 +59,8 @@ void readChl() {
     FluorRead(ChlPin);
     ChlAvg = FluorAvg * GainVal;
     ChlStd = FluorStd * GainVal;
-    Serial.print("1X Reading= "); Serial.println(FluorAvg);
   }
-  Serial.print("Chlorophyll Average= "); Serial.println(ChlAvg);
-  Serial.print("Chlorophyll Standard Deviation = "); Serial.println(ChlStd);
-  Serial.println("------------------------------------------");
+  
   tcaselect(7);
   mcp.digitalWrite(8, LOW);
 }
@@ -85,7 +80,6 @@ void readPhyco() {
   GainVal = 0.01; //multiply by 0.01 for to normalize the reading by gain value of 100X
   delay(100);  //required after changing gains
   FluorRead(PhycoPin);
-  Serial.print("Initial Phyco Reading =  "); Serial.println(FluorAvg);
 
   //auto gain
   if (FluorAvg < 4400) {
@@ -103,7 +97,6 @@ void readPhyco() {
     FluorRead(PhycoPin);
     PhycoAvg = FluorAvg * GainVal;
     PhycoStd = FluorStd * GainVal;
-    Serial.print("10X Reading =  "); Serial.println(FluorAvg);
   }
 
   if (FluorAvg > 4400) {
@@ -115,11 +108,7 @@ void readPhyco() {
     FluorRead(PhycoPin);
     PhycoAvg = FluorAvg * GainVal;
     PhycoStd = FluorStd * GainVal;
-    Serial.print("1X Reading= "); Serial.println(FluorAvg);
   }
-  Serial.print("Phycocyanin Average= "); Serial.println(PhycoAvg);
-  Serial.print("Phycocyanin Standard Deviation = "); Serial.println(PhycoStd);
-  Serial.println("------------------------------------------");
   tcaselect(7);
   mcp.digitalWrite(9, LOW);
 }
