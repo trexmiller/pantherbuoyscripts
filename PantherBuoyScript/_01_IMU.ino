@@ -1,10 +1,5 @@
 //Function to set up IMU with calibration values
 
-//This equation converts mag to heading... float Heading = 180*atan2( mag.m.y, mag.m.z)/PI; 
-//But IMU is not flat, it is standing up so need to use X and Y axes instead of y and z.
-//Maybe use adafruit library instead for LIS3MDL... #include <Adafruit_LIS3MDL.h>
-
-//Maybe use MPU6050_light library instead for MPU6050 accel/gyro or adafruit library
 
 void setupIMU()
 {
@@ -85,3 +80,77 @@ void readIMU() {
   //Read raw gyro values
   IMU.readGyro(GyroX, GyroY, GyroZ);
 }
+
+
+//This equation converts mag to heading... float Heading = 180*atan2( mag.m.y, mag.m.z)/PI; 
+//But IMU is not flat, it is standing up so need to use X and Y axes instead of y and z.
+//Maybe use adafruit library instead for LIS3MDL... #include <Adafruit_LIS3MDL.h>
+
+//Maybe use MPU6050_light library instead for MPU6050 accel/gyro or adafruit library
+
+
+/*
+void setupIMU(){
+  tcaselect(7);
+  mcp.pinMode(10,OUTPUT);
+  delay(1000);
+  mcp.digitalWrite(10,HIGH);
+  delay(1000);
+  tcaselect(3);
+  delay(1000);
+  
+  lis3mdl.begin_I2C();
+  lis3mdl.setOperationMode(LIS3MDL_CONTINUOUSMODE);
+  lis3mdl.setDataRate(LIS3MDL_DATARATE_155_HZ);
+  lis3mdl.setRange(LIS3MDL_RANGE_4_GAUSS);
+
+  lis3mdl.setIntThreshold(500);
+  lis3mdl.configInterrupt(false, false, true, // enable z axis
+                          true, // polarity
+                          false, // don't latch
+                          true); // enabled!
+  tcaselect(1);
+  delay(1000);
+  mpu.begin();
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+
+  mcp.digitalWrite(10,LOW);
+  delay(1000);
+}
+
+void readIMU(){
+  tcaselect(7);
+  mcp.pinMode(10,OUTPUT);
+  delay(1000);
+  mcp.digitalWrite(10,HIGH);
+  delay(1000);
+  tcaselect(3);
+  delay(1000);
+  
+  lis3mdl.read();
+  MagX = lis3mdl.x; 
+  MagY = lis3mdl.y; 
+  MagZ = lis3mdl.z;
+
+  tcaselect(1);
+  delay(1000);
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
+  AccelX = a.acceleration.x;
+  AccelY = a.acceleration.y;
+  AccelZ = a.acceleration.z;
+
+  GyroX = g.gyro.x;
+  GyroY = g.gyro.y;
+  GyroZ = g.gyro.z;
+
+  float Heading = 180*atan2(MagY, MagZ)/PI;
+  Serial.print("Heading = "); Serial.println(Heading);
+  
+  tcaselect(7);
+  mcp.digitalWrite(10,LOW);
+  delay(1000);
+}
+*/

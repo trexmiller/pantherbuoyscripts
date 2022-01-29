@@ -20,10 +20,11 @@ void menu(){
   Serial.println(F("(3) Data Rate"));
   Serial.println(F("(4) Network Menu"));
   Serial.println(F("(5) System Date and Time Menu"));
-  Serial.println(F("(6) Sensors Menu"));
-  Serial.println(F("(7) GPS Options"));
-  Serial.println(F("(8) SD Card Menu"));
-  Serial.println(F("(9) Battery Voltage"));
+  Serial.println(F("(6) Read Sensors"));
+  Serial.println(F("(7) Calibrate Sensors"));
+  Serial.println(F("(8) GPS Options"));
+  Serial.println(F("(9) SD Card Menu"));
+  Serial.println(F("(B) Battery Voltage"));
   Serial.println(F("(A) Auxiliary Functions"));
   Serial.println(F("(&) Restart the device"));
   Serial.println(F("(#) Deploy"));
@@ -63,12 +64,16 @@ void menu(){
     sensorMenu();
   break;
   case '7': 
-    GPSMenu();
+    Serial.println();     
+    calSensorsMenu();
   break;
   case '8':
-    sdMenu();
+    GPSMenu();
   break;
   case '9':
+    sdMenu();
+  break;
+  case 'B':
     Serial.println(); 
     Serial.println(F("********************************************************************************"));
     Serial.print(F("Battery Voltage (mV): ")); 
@@ -705,7 +710,6 @@ void sensorMenu(){
   Serial.println(F("(6) Read PAR"));
   Serial.println(F("(7) Read Panel Temp and Humidity"));
   Serial.println(F("(8) Read IMU"));
-  Serial.println(F("(9) Calibrate Sensors"));
   Serial.println(F("(*) Back to Main Menu"));
 
   sensorMenuChoice();
@@ -797,10 +801,6 @@ void sensorMenu(){
       Serial.print(F("Heading = ")); Serial.print(Heading); Serial.println(F(" (degrees)"));
     return sensorMenu();
     break; 
-  case '9':
-      Serial.println(); 
-      calSensorsMenu();
-    break;
   case '*':
     break; //We break here with nothing else and defaults back to main menu
     }
@@ -833,7 +833,7 @@ void calSensorsMenu(){
   Serial.println(F("(6) Calibrate PAR"));
   Serial.println(F("(7) View Calibration Coefficients"));
   Serial.println(F("(8) Read Temp Chain Node Addresses"));
-  Serial.println(F("(*) Back to Sensor Menu"));
+  Serial.println(F("(*) Back to Main Menu"));
 
   calMenuChoice();
   switch (calChoice) {
@@ -886,7 +886,7 @@ void calSensorsMenu(){
   case '*':
     break; //We break here with nothing else and defaults back to main menu
     }
-  return sensorMenu();
+  return menu();
  }
 
 int calMenuChoice(){

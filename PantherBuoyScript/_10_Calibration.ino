@@ -453,7 +453,7 @@ char ChlCalArray[4];
 int ChlCalPointsChoice;
 int TotalCalPoints;
 void CalChl(){  
-  Serial.println(F("Enter the total number of calibration points that will be measured not including the blank"));
+  Serial.println(F("Enter the total number of calibration points that will be measured **including the blank**"));
   
   readChlCalInput();
   TotalCalPoints = atoi(ChlCalArray);
@@ -473,17 +473,7 @@ void CalChl(){
   readChl();
   CalChlResult[0] = ChlAvg;
 
-  /*
-  Serial.println(F(""));
-  Serial.println(F("Place sensor in the first standard solution containing chlorophyll"));
-  Serial.println(F("Enter the concentration of chlorophyll in ug/L, hit enter and fluorescence will be measured"));
-  readChlCalInput();
-  CalChlConc[1] = atof(ChlCalArray);;
-  Serial.println(F("Got it. Measuring fluorescence (please wait)"));
-  Serial.println(F(""));
-  readChl();
-  CalChlResult[1] = ChlAvg;
-  */
+
   
   for (int i = 1; i<TotalCalPoints; i++){
     Serial.println(F(""));
@@ -491,23 +481,15 @@ void CalChl(){
     Serial.println(F("Enter the concentration of the standard solution, hit enter and fluorescence will be measured"));
     readChlCalInput();
     CalChlConc[i] = atof(ChlCalArray);
-    Serial.println(F("Got it. Measuring fluorescence (please wait)"));
+    Serial.println(F(""));
+    Serial.print(F("Got it. Standard Concentration ")); Serial.print(i); Serial.print(F(" = ")); Serial.println(CalChlConc[i]);
+    Serial.print(F("Measuring fluorescence of standard ")); Serial.print(i); Serial.println(F(" (please wait)"));
     Serial.println(F(""));
     readChl();
     CalChlResult[i] = ChlAvg;
     }
 
-  /*
-  Serial.println(F(""));
-  Serial.println(F("Place sensor in the **last** standard solution"));
-  Serial.println(F("Enter the concentration of the last standard, hit enter and fluorescence will be measured"));
-  readChlCalInput();
-  CalChlConc[TotalCalPoints] = atof(ChlCalArray);
-  Serial.println(F("Got it. Measuring fluorescence (please wait)"));
-  Serial.println(F(""));
-  readChl();
-  CalChlResult[TotalCalPoints] = ChlAvg;
-  */
+  
   
   Serial.println(F("Here are the results:")); 
     Serial.print(F("Blank = ")); 
@@ -523,7 +505,7 @@ void CalChl(){
   Serial.println(F(""));
 
 
- float Ex;
+  float Ex;
   float Ey;
   float Exy;
   float Ex2;
@@ -537,26 +519,35 @@ void CalChl(){
     Ex += CalChlConc[i];
   }
 
-  for(int i = 0; i<TotalCalPoints; i++){
-    Exy += CalChlConc[i] * CalChlResult[i];
+  for(int i = 1; i<TotalCalPoints; i++){
+    Exy += (CalChlConc[i] * CalChlResult[i]);
   }
 
   for(int i = 0; i<TotalCalPoints; i++){
-    Exy += CalChlConc[i] * CalChlResult[i];
+    Exy += (CalChlConc[i] * CalChlResult[i])/2;
   }
 
   for(int i = 0; i<TotalCalPoints; i++){
-    Ex2 += CalChlConc[i] * CalChlConc[i];
+    Ex2 += (CalChlConc[i] * CalChlConc[i]);
   }
 
   for(int i = 0; i<TotalCalPoints; i++){
-    Ey2 += CalChlResult[i] * CalChlResult[i];
+    Ey2 += (CalChlResult[i] * CalChlResult[i]);
   }
 
-  float ChlSlope = ((TotalCalPoints*Exy) - (Ex * Ey))/((TotalCalPoints*Ex2)-(Ex * Ex));
+  float ChlSlope = ((TotalCalPoints*Exy) - (Ex * Ey))/((TotalCalPoints*Ex2)-(Ex * Ex))*100;
   float ChlOffset = (Ey - (ChlSlope * Ex))/TotalCalPoints;
   float ChlR = ((TotalCalPoints * Exy) - Ex * Ey) / (sqrt((TotalCalPoints * Ex2) - (Ex * Ex)) * sqrt((TotalCalPoints * Ey2) - (Ey * Ey)));
 
+
+
+  Serial.print ("Ey = "); Serial.println(Ey); 
+  Serial.print ("Ex = "); Serial.println(Ex);
+  Serial.print ("Exy = "); Serial.println(Exy);
+  Serial.print ("Ex2 = "); Serial.println(Ex2);
+  Serial.print ("Ey2 = "); Serial.println(Ey2);
+   
+  
   Serial.print ("Chlorophyll calibration Slope = "); Serial.println(ChlSlope);
   Serial.print ("Chlorophyll calibration Offset = "); Serial.println(ChlOffset);
   Serial.print ("Chlorophyll calibration Regression R = "); Serial.println(ChlR);
