@@ -185,7 +185,7 @@ void SendData() {
   GetReg();
   SetTime();
 
-  sprintf(url1, "AT+KHTTPSGET=1,\"lakestat/BuoyData/NCL/GetData.php?batv=%f&roll=%f&pitch=%f&heading=%f&lat=%f&lon=%f&course=%f&speed=%f&alt=%f&rssi=%02d&modemtemp=%02d&regstat=%02d&timestamper=20%d-%02d-%02d+%02d:%02d:%02d",
+  sprintf(url1, "AT+KHTTPSGET=1,\"lakestat/BuoyData/***/GetData.php?batv=%f&roll=%f&pitch=%f&heading=%f&lat=%f&lon=%f&course=%f&speed=%f&alt=%f&rssi=%02d&modemtemp=%02d&regstat=%02d&timestamper=20%d-%02d-%02d+%02d:%02d:%02d",
           Batv,
 
           //IMU data
