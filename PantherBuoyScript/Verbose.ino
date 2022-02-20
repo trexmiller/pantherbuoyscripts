@@ -65,5 +65,14 @@ void PrintResults(){
     Serial.print("DOmgL"); Serial.print(",");
     Serial.print("DOTemp"); Serial.print(",");
     Serial.print("DOSat"); Serial.print(",");
+
+    //Wave data
+    Serial.print("Heading = "); Serial.println(WVHeading);
+    Serial.print("WaveHt =  "); Serial.println(WVHT);
+    Serial.print("Wave Direction =  "); Serial.println(WVDir);
+    Serial.print("MeanWVDir =  "); Serial.println(MeanWVDir);
+    Serial.print("GN =  "); Serial.println(GN);
+    Serial.print("DP1 =  "); Serial.println(DP1);
+    Serial.print("DP2 =  "); Serial.println(DP2);
   }
 }

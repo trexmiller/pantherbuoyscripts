@@ -147,7 +147,7 @@ void GetModemTemp() {
 char* RegStatus1;
 char* RegStatus2;
 char* RegStatus3;
-char* RegStatus;
+int RegStatus;
 void GetReg() {
   pinMode(5, OUTPUT);
   digitalWrite(5, LOW);
@@ -155,13 +155,10 @@ void GetReg() {
   pinMode(5, INPUT);
   modem.init();
   sendReceiveATCommand("AT+CREG?", "\r\nOK", "\r\nERROR", 3000);
-  RegStatus1 = strtok(result_char, ":,");
-  RegStatus2 = strtok(NULL, ",");
-  RegStatus = strtok(NULL, ",");
-  //RegStatus = atoi(RegStatus2);
-  Serial.println(RegStatus1);
-  Serial.println(RegStatus2);
-  Serial.println(RegStatus3);
+  RegStatus1=strtok(result_char,":,");
+  RegStatus2=strtok(NULL,",");
+  RegStatus3=strtok(NULL,",");
+  RegStatus = atoi(RegStatus3);
 }
 
 
@@ -185,14 +182,8 @@ void SendData() {
   GetReg();
   SetTime();
 
-  sprintf(url1, "AT+KHTTPSGET=1,\"lakestat/BuoyData/***/GetData.php?batv=%f&roll=%f&pitch=%f&heading=%f&lat=%f&lon=%f&course=%f&speed=%f&alt=%f&rssi=%02d&modemtemp=%02d&regstat=%02d&timestamper=20%d-%02d-%02d+%02d:%02d:%02d",
+  sprintf(url1, "AT+KHTTPSGET=1,\"XXXXXXXXXXXXXGetData.php?batv=%.2f&lat=%.5f&lon=%.5f&course=%.2f&speed=%.2f&alt=%.2f&rssi=%02d&modemtemp=%02d&regstat=%02d&timestamper=20%d-%02d-%02d+%02d:%02d:%02d",
           Batv,
-
-          //IMU data
-          Roll,
-          Pitch,
-          Heading,
-
           //GPS data
           Lat,
           Lon,
@@ -212,21 +203,29 @@ void SendData() {
           Second
          );
 
-  sprintf(url2, "&temp0=%f&temp1=%f&temp2=%f&temp3=%f&temp4=%f&temp5=%f&temp6=%f&temp7=%f&temp8=%f&wd=%f&cd=%f&ws=%f&phyavg=%f&phystd=%f&chlavg=%f&chlstd=%f&paravg=%f&parstd=%f&domgl=%f&dotemp=%f&dosat=%f\"",
+  sprintf(url2, "&temp0=%.2f&temp1=%.2f&temp2=%.2f&temp3=%.2f&temp4=%.2f&atemp=%.2f&humidity=%.2f&pressure=%.2f&gas=%.2f&bmealt=%.2f&wd=%.2f&truewd=%.2f&ws=%.2f&gust=%.2f&atmoairt=%.2f&atmox=%.2f&atmoy=%.2f&phyavg=%.2f&phystd=%.2f&chlavg=%.2f&chlstd=%.2f&paraavg=%.2f&parastd=%.2f&iravg=%.2f&irstd=%.2f&uvavg=%.2f&uvstd=%.2f&domgl=%.2f&dosat=%.2f&dotemp=%.2f&wvht=%.2f&wvdir=%.2f&wvperiod=%.2f&wvheading=%.2f\"",
           Temp[0],
           Temp[1],
           Temp[2],
           Temp[3],
           Temp[4],
-          Temp[5],
-          Temp[6],
-          Temp[7],
-          Temp[8],
+
+          //BME Data
+          ATemp,
+          Humidity,
+          Pressure,
+          Gas,
+          BMEAlt,
+
 
           //Wind data
           WindDir,
-          WindDir,
+          TrueWindDir,
           WindSpeed,
+          Gust,
+          ATMOAirT,
+          ATMOX,
+          ATMOY,
 
           //Fluorometer data
           PhycoAvg,
@@ -235,13 +234,23 @@ void SendData() {
           ChlStd,
 
           //PAR data
-          PARAvg,
-          PARStd,
+          paraAvg,
+          paraStd,
+          IRAvg,
+          IRStd,
+          UVAvg,
+          UVStd,
 
           //RDO data
           DO,
           DOS,
-          RDOTemp
+          RDOTemp,
+
+          //WaveData
+          WVHT,
+          WVDir,
+          WVPeriod,
+          WVHeading
          );
 
   strcpy(url, url1);
@@ -257,19 +266,20 @@ void SendData() {
   }
 
   sendReceiveATCommand("AT&K3", "\r\nOK", "\r\nERROR", 10000); //set flow control
-  //sendReceiveATCommand("AT+KCNXCFG=1,\"GPRS\",\"soracom.io\"", "\r\nOK", "\r\nERROR", 10000); //Setup GPRS communication
-  //sendReceiveATCommand("AT+KCNXTIMER=1,10,3,30", "\r\nOK", "\r\nERROR", 10000); //Set a timer for retries
-  //sendReceiveATCommand("AT+KHTTPSCFG=1,\"web.uwm.edu\",443,1", "\r\n+KHTTPS_IND: 1,1", "\r\nERROR", 30000);
+  sendReceiveATCommand("AT+KCNXCFG=1,\"GPRS\",\"soracom.io\"", "\r\nOK", "\r\nERROR", 10000); //Setup GPRS communication
+  sendReceiveATCommand("AT+KCNXTIMER=1,10,3,30", "\r\nOK", "\r\nERROR", 10000); //Set a timer for retries
+  sendReceiveATCommand("AT+KHTTPSCFG=1,\"web.uwm.edu\",443,1", "\r\n+KHTTPS_IND: 1,1", "\r\nERROR", 30000);
 
 
   //Uncomment when ready to send data
-  //sendReceiveATCommand(url, "\r\nOK", "\r\nERROR", 10000); //Send data using HTTP GET
+  sendReceiveATCommand(url, "\r\nOK", "\r\nERROR", 10000); //Send data using HTTP GET
   char* Result1;
   char* Result2;
   char* Result3;
   Result1 = strtok(result_char, " ");
   Result2 = strtok(NULL, " ");
   Result3 = strtok(NULL, " ");
+  Serial.println(result_char);
 
   Serial.println(Result3);
 

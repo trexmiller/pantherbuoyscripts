@@ -21,17 +21,20 @@ void readTemps() {
   Temp[0] = -995;
   
   tcaselect(7);
+  delay(100);
   mcp.pinMode(11, OUTPUT);
+  delay(100);
   mcp.digitalWrite(11, HIGH);
   delay(1000);
   mcp.pinMode(10, OUTPUT);
+  delay(100);
   mcp.digitalWrite(10, HIGH);
   delay(1000);
   
-  while (TempsNowTime + TempsInterval > millis()){
-    if (Temp[0]==-995 || Temp[0] == -127){
+  
+  while(TempsNowTime + TempsInterval > millis()){
+     if(Temp[0]==-995 || Temp[0] == -127){
       for (int i = 0; i < NSENSORS; i++) {
-        Serial.print(".");
         byte type_s;
         byte rawtemp[12];
         oneWire.reset();
@@ -61,10 +64,4 @@ void readTemps() {
       }
     }
   }
-  delay(100);
-  tcaselect(7);
-  mcp.digitalWrite(10, LOW);
-  delay(100);
-  mcp.digitalWrite(11, LOW);
-  Serial.println("");
 }

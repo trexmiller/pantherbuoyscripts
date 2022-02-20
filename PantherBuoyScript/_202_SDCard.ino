@@ -271,7 +271,7 @@ void checkSD() {
 
 //Function to create the file on the SD card where data strings will be saved
 void createSDFile() {
-  File logfile = sd.open("datalog.csv", FILE_WRITE);
+  File logfile = sd.open("STRG2022.csv", FILE_WRITE);
   //Timedat
   logfile.print("YY"); logfile.print(",");
   logfile.print("MM"); logfile.print(",");
@@ -280,20 +280,6 @@ void createSDFile() {
   logfile.print("MM"); logfile.print(",");
   logfile.print("SS"); logfile.print(",");
   
-  //IMU data
-  logfile.print("accelx"); logfile.print(",");
-  logfile.print("accely"); logfile.print(",");
-  logfile.print("accelz"); logfile.print(",");
-  logfile.print("magx"); logfile.print(",");
-  logfile.print("magy"); logfile.print(",");
-  logfile.print("magz"); logfile.print(",");
-  logfile.print("gyrox"); logfile.print(",");
-  logfile.print("gyroy"); logfile.print(",");
-  logfile.print("gyroz"); logfile.print(",");
-  logfile.print("roll"); logfile.print(",");
-  logfile.print("pitch"); logfile.print(",");
-  logfile.print("heading"); logfile.print(",");
-
   //Modem data
   logfile.print("rsi"); logfile.print(",");
   logfile.print("ModemTemp"); logfile.print(",");
@@ -338,44 +324,63 @@ void createSDFile() {
   logfile.print("DOTemp"); logfile.print(",");
   logfile.print("DOSat"); logfile.print(",");
 
+  //BME Data
+  logfile.print("ATemp"); logfile.print(",");
+  logfile.print("Pressure"); logfile.print(",");
+  logfile.print("Humidity"); logfile.print(",");
+  logfile.print("Gas"); logfile.print(",");
+  logfile.print("BMEAlt"); logfile.print(",");
+
+  //Wind Data
+  logfile.print("WindSpeed"); logfile.print(",");
+  logfile.print("WindDir"); logfile.print(",");
+  logfile.print("CalDirection"); logfile.print(",");
+  logfile.print("Gust"); logfile.print(",");
+  logfile.print("ATMOAirT"); logfile.print(",");
+  logfile.print("ATMOX"); logfile.print(",");
+  logfile.print("ATMOY"); logfile.print(",");
+
+  //Wave Data
+  logfile.print("WVHeading"); logfile.print(",");
+  logfile.print("WVDir"); logfile.print(",");
+  logfile.print("WVPeriod"); logfile.print(",");
+  logfile.print("WVHT"); logfile.print(",");
+  logfile.print("MeanWVDir"); logfile.print(",");
+  logfile.print("GN"); logfile.print(",");
+  logfile.print("DP1"); logfile.print(",");
+  logfile.print("DP2");
+
   //logfile.sync();
   logfile.close();
 }
 
 //Function to save data to SD card
 void saveSD() {
-  File logfile = sd.open("datalog.csv", FILE_WRITE);
+  GetCSQ();
+  GetModemTemp();
+  GetReg();
+  File logfile = sd.open("STRG2022.csv", FILE_WRITE);
   sprintf(TimeDat, "%d,%d,%d,%d,%d,%d,",
-          Year,
-          Month,
-          Day,
-          Hour,
-          Minute,
-          Second
+          rtc.getYear(),
+          rtc.getMonth(),
+          rtc.getDay(),
+          rtc.getHours(),
+          rtc.getMinutes(),
+          rtc.getSeconds()
          );
-
-  sprintf(IMUData, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,",
-          AccelX,
-          AccelY,
-          AccelZ,
-          MagX,
-          MagY,
-          MagZ,
-          GyroX,
-          GyroY,
-          GyroZ,
-          Roll,
-          Pitch,
-          Heading
-         );
+  //Serial.println("TimeDat:");
+  //Serial.println(TimeDat);
 
   sprintf(ModemData, "%d,%d,%d,",
           RSI,
           ModemTemp,
           RegStatus
          );
+         
+  //Serial.println("ModemData:");
+  //Serial.println(ModemData);
 
-  sprintf(GPSData, "%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,",
+  sprintf(GPSData, "%d,%d,%d,%d,%d,%d,%.5f,%.5f,%.2f,%.2f,%.2f,%f,",
           GPSYear,
           GPSMonth,
           GPSDay,
@@ -390,23 +395,36 @@ void saveSD() {
           Sat
          );
 
-  sprintf(BattData, "%f,",
+  //Serial.println("GPSData:");
+  //Serial.println(GPSData);
+
+  sprintf(BattData, "%.2f,",
           Batv
          );
+  //Serial.println("BattData:");
+  //Serial.println(BattData);
 
-  sprintf(FluorData, "%f,%f,%f,%f,",
+  sprintf(FluorData, "%.2f,%.2f,%.2f,%.2f,",
           ChlAvg,
           ChlStd,
           PhycoAvg,
           PhycoStd
          );
-
-  sprintf(PARData, "%f,%f,",
-          PARAvg,
-          PARStd
+  //Serial.println("FluorData:");
+  //Serial.println(FluorData);
+  
+  sprintf(PARData, "%.2f,%.2f,,%.2f,,%.2f,,%.2f,,%.2f,",
+          paraAvg,
+          paraStd,
+          IRAvg,
+          IRStd,
+          UVAvg,
+          UVStd
          );
-
-  sprintf(TempData, "%f,%f,%f,%f,%f,%f,%f,%f",
+  //Serial.println("PARData:");
+  //Serial.println(PARData);
+  
+  sprintf(TempData, "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,",
           Temp[0],
           Temp[1],
           Temp[2],
@@ -414,17 +432,55 @@ void saveSD() {
           Temp[4],
           DO,
           DOS,
-          RDOTemp
+          RDOTemp,
+          ATemp,
+          Humidity,
+          Pressure,
+          Gas,
+          BMEAlt
          );
 
+  Serial.println("TempData:");
+  Serial.println(TempData);
+  
+  sprintf(WindData, "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,",
+          WindSpeed,
+          WindDir,
+          TrueWindDir,
+          Gust,
+          ATMOAirT,
+          ATMOX,
+          ATMOY
+         );
+  
+  Serial.println("WindData:");
+  Serial.println(WindData);
+  
+
+  sprintf(WaveData, "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f", //Last set of data so no ending comma
+          WVHeading,
+          WVDir,
+          WVPeriod,
+          WVHT,
+          MeanWVDir,
+          GN,
+          DP1,
+          DP2
+        );
+        
+  Serial.println("WaveData:");
+  Serial.println(WaveData);
+
   strcpy(SDData, TimeDat);
-  strcat(SDData, IMUData);
   strcat(SDData, ModemData);
   strcat(SDData, GPSData);
   strcat(SDData, BattData );
   strcat(SDData, FluorData );
   strcat(SDData, PARData );
   strcat(SDData, TempData );
+  strcat(SDData, WindData );
+  strcat(SDData, WaveData );
+
   strcat(SDData, "\r\n");
   Serial.println("The data string below was saved to SD card...");
   Serial.print("YY"); Serial.print(",");
@@ -433,18 +489,6 @@ void saveSD() {
   Serial.print("HH"); Serial.print(",");
   Serial.print("MM"); Serial.print(",");
   Serial.print("SS"); Serial.print(",");
-  Serial.print("accelx"); Serial.print(",");
-  Serial.print("accely"); Serial.print(",");
-  Serial.print("accelz"); Serial.print(",");
-  Serial.print("magx"); Serial.print(",");
-  Serial.print("magy"); Serial.print(",");
-  Serial.print("magz"); Serial.print(",");
-  Serial.print("gyrox"); Serial.print(",");
-  Serial.print("gyroy"); Serial.print(",");
-  Serial.print("gyroz"); Serial.print(",");
-  Serial.print("roll"); Serial.print(",");
-  Serial.print("pitch"); Serial.print(",");
-  Serial.print("heading"); Serial.print(",");
   Serial.print("rssi"); Serial.print(",");
   Serial.print("modemtemp"); Serial.print(",");
   Serial.print("RegStatus"); Serial.print(",");
@@ -465,14 +509,36 @@ void saveSD() {
   Serial.print("ChlStd"); Serial.print(",");
   Serial.print("PhyAvg"); Serial.print(",");
   Serial.print("PhyStd"); Serial.print(",");
+  Serial.print("PARAvg"); Serial.print(",");
+  Serial.print("PARStd"); Serial.print(",");
   Serial.print("Temp0"); Serial.print(",");
   Serial.print("Temp1"); Serial.print(",");
   Serial.print("Temp2"); Serial.print(",");
   Serial.print("Temp3"); Serial.print(",");
   Serial.print("Temp4"); Serial.print(",");
   Serial.print("DOmgL"); Serial.print(",");
+  Serial.print("DOSat"); Serial.print(",");
   Serial.print("DOTemp"); Serial.print(",");
-  Serial.println("DOSat");
+  Serial.print("ATemp"); Serial.print(",");
+  Serial.print("Humidity"); Serial.print(",");
+  Serial.print("Pressure"); Serial.print(",");
+  Serial.print("Gas"); Serial.print(",");
+  Serial.print("BMEAlt"); Serial.print(",");
+  Serial.print("WindSpeed"); Serial.print(",");
+  Serial.print("WindDir"); Serial.print(",");
+  Serial.print("TrueWindDir"); Serial.print(",");
+  Serial.print("Gust"); Serial.print(",");
+  Serial.print("ATMOAirT"); Serial.print(",");
+  Serial.print("ATMOX"); Serial.print(",");
+  Serial.print("ATMOY"); Serial.print(",");
+  Serial.print("WVHeading"); Serial.print(",");
+  Serial.print("WVDir"); Serial.print(",");
+  Serial.print("WVPeriod"); Serial.print(",");
+  Serial.print("WVHT"); Serial.print(",");
+  Serial.print("MeanWVDir"); Serial.print(",");
+  Serial.print("GN"); Serial.print(",");
+  Serial.print("DP1"); Serial.print(",");
+  Serial.println("DP2");
   Serial.println(SDData);
   logfile.print(SDData);
   logfile.sync();

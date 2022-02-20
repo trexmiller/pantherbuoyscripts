@@ -91,6 +91,7 @@ void menu(){
     Serial.println(F("System will reset in 5 seconds"));
   break;
   case '#':
+    Serial.println(F("Deploy!"));
   break;
   } 
   //Just go on with setup now
@@ -444,7 +445,7 @@ void networkMenu(){
       Serial.println(); 
       Serial.println(F("********************************************************************************"));
       GetReg();
-      Serial.print(F("Registration Status = ")); Serial.println(F(RegStatus));
+      Serial.print(F("Registration Status = ")); Serial.println(RegStatus);
       Serial.println(F(""));
       Serial.println(F("0 = Not registered, ME is not currently searching a new operator to register to"));
       Serial.println(F("1 = Registered, home network"));
@@ -513,26 +514,28 @@ void GPSMenu(){
   Serial.println();
   Serial.println(F("---GPS MENU---"));
   Serial.println(F("(1) Measure GPS Variables"));
-  Serial.println(F("(2) Attempt to Get Satelite Fix (10 Min Timeout)"));
-  Serial.println(F("(3) Halt Program Start to Wait for GPS Fix"));
-  Serial.println(F("(4) Do Not Halt for GPS Fix"));
+  Serial.println(F("(2) Attempt to Get Satelite Fix for 10 minutes"));
+  Serial.println(F("(3) Halt Deployment Start to Wait for GPS Fix"));
+  Serial.println(F("(4) Do Not Halt Deployment for GPS Fix"));
   Serial.println(F("(*) Return to Main Menu"));
 
   GPSMenuChoice();
   switch (GPSChoice) {
   case '1':  
     Serial.println();
-    Serial.println(F("********************************************************************************"));  
+    Serial.println(F("********************************************************************************")); 
+    Serial.println(F("Attempting to measure GPS variables!"));
+    Serial.println(F("This function will attempt satellite fix for 10 seconds then read GPS variables (please wait)"));  
+    Serial.println(F("NOTE: It can take up to 10 min to achieve satellite fix after power up. GPS antenna must be in view of open sky."));
     readGPS();
-    
     Serial.print(F("gpsyear = ")); Serial.println(GPSYear);
     Serial.print(F("gpsmonth = ")); Serial.println(GPSMonth);
     Serial.print(F("gpsday = ")); Serial.println(GPSDay);
     Serial.print(F("gpshour = ")); Serial.println(GPSHour);
     Serial.print(F("gpsmin = ")); Serial.println(GPSMin);
     Serial.print(F("gpssec = ")); Serial.println(GPSSec);
-    Serial.print(F("latitude = ")); Serial.println(Lat);
-    Serial.print(F("longitude = ")); Serial.println(Lon);
+    Serial.print(F("latitude = ")); Serial.println(Lat,6);
+    Serial.print(F("longitude = ")); Serial.println(Lon,6);
     Serial.print(F("course = ")); Serial.println(Course);
     Serial.print(F("speed = ")); Serial.println(Speed);
     Serial.print(F("alt = ")); Serial.println(Alt);
@@ -544,6 +547,7 @@ void GPSMenu(){
   case '2':  
       Serial.println(); 
       Serial.println(F("********************************************************************************"));
+      Serial.print(F("Enter any character to halt the program"));
       TestGPS();
       Serial.println(F("********************************************************************************"));
     return GPSMenu();
@@ -552,7 +556,7 @@ void GPSMenu(){
       Serial.println(); 
       Serial.println(F("********************************************************************************"));
       GPSHold = 1;
-      Serial.println(F("The program will wait for GPS satelite fix (GPSHold  = 1"));
+      Serial.println(F("The deployment program WILL wait up to 10 min for GPS satelite fix before starting deployment"));
       Serial.println(F("********************************************************************************"));
     return GPSMenu();
     break;
@@ -560,7 +564,7 @@ void GPSMenu(){
       Serial.println(); 
       Serial.println(F("********************************************************************************"));
       GPSHold = 0;
-      Serial.println(F("The program will NOT wait for GPS satelite fix (GPSHold  = 0"));
+      Serial.println(F("The deployment program will NOT wait for GPS satelite fix before starting the deployment"));
       Serial.println(F("********************************************************************************"));
     return GPSMenu();
     break; 
@@ -580,12 +584,11 @@ int GPSMenuChoice(){
     return(GPSChoice);
 }
 
-//Test GPS
 
 void TestGPS(){
   GPSON();
   staticTime = millis();
-  while (staticTime+GPSHold > millis()){
+  while (staticTime+(1000*60*10) > millis() & Serial.available() == 0){
       int SatSetup = -1;
       while (SatSetup < 5) {
         while (ss.available() > 0)
@@ -603,7 +606,6 @@ void TestGPS(){
           Serial.print(F("Waiting for location update. ")); Serial.print(F("Latitude = ")); Serial.print(LatSetup); Serial.print(F(", Longitude = ")); Serial.println(gps.location.lng());
         }
     }
-  GPSOFF();
 }
 
 
@@ -619,6 +621,7 @@ void AuxMenu(){
   Serial.println(F("(5) Turn on the 5V3 switched power rail"));
   Serial.println(F("(6) Turn on the 12V switched power rail"));
   Serial.println(F("(7) Turn off all switched power rails"));
+  Serial.println(F("(8) Power down modem (gracefully)"));
   Serial.println(F("(*) Back to Main Menu"));
 
   AuxMenuChoice();
@@ -677,6 +680,12 @@ void AuxMenu(){
       Serial.println(F("All switched power rails are off!"));
     return AuxMenu();
     break;
+  case '8':  
+      Serial.println(F("Turning off modem"));
+      ModemOff();
+      Serial.println(F("Modem is off"));
+    return AuxMenu();
+    break;
   case '*':     
     break; //We break here with nothing else and defaults back to main menu
     }
@@ -710,6 +719,9 @@ void sensorMenu(){
   Serial.println(F("(6) Read PAR"));
   Serial.println(F("(7) Read Panel Temp and Humidity"));
   Serial.println(F("(8) Read IMU"));
+  Serial.println(F("(9) Read Parsed Wave Data"));
+  Serial.println(F("(W) Read Raw Wave Data"));
+  Serial.println(F("(L) Read Light Sensor"));
   Serial.println(F("(*) Back to Main Menu"));
 
   sensorMenuChoice();
@@ -729,12 +741,18 @@ void sensorMenu(){
   case '1':   
     Serial.println();  
     Serial.println(F("Measuring Wind Speed and Direction (please wait)"));
-    readWindSpeed();
-    readWindDir();
-    Serial.print(F("Wind Speed = ")); Serial.print(WindSpeed); Serial.println(F(" (mph)"));
+    readWind();
+    Serial.println(F("********************************************************************************"));
+    Serial.print(F("Wind Speed = ")); Serial.print(WindSpeed); Serial.println(F(" (m/s)"));
     Serial.print(F("Wind Direction = ")); Serial.print(WindDir); Serial.println(F(" (degrees)"));
-    Serial.print(F("Buoy Heading = ")); Serial.print(Heading); Serial.println(F(" (degrees)"));
-    Serial.print(F("Calibrated Wind Direction = ")); Serial.print(CalDirection); Serial.println(F(" (degrees)"));
+    Serial.print(F("Gust = ")); Serial.print(Gust); Serial.println(F(" (m/s)"));
+    Serial.print(F("Air Temp = ")); Serial.print(ATMOAirT); Serial.println(F(" (C)"));
+    Serial.print(F("Orientation X = ")); Serial.print(ATMOX); Serial.println(F(" (Degrees)"));
+    Serial.print(F("Orientation Y = ")); Serial.print(ATMOY); Serial.println(F(" (Degrees)"));
+    Serial.print(F("Buoy Heading = ")); Serial.print(WVHeading); Serial.println(F(" (degrees)"));
+    Serial.print(F("Corrected Wind Direction = ")); Serial.print(TrueWindDir); Serial.println(F(" (degrees)"));
+    Serial.println(F("********************************************************************************"));
+    Serial.println(F(""));
     return sensorMenu();
     break;
   case '2':  
@@ -782,9 +800,8 @@ void sensorMenu(){
   case '6': 
       Serial.println();    
       Serial.println(F("Measuring PAR (please wait)"));
-      readPAR();
-      Serial.print(F("PAR (average) = ")); Serial.print(PARAvg); Serial.println(F("(photons/m^2/s)"));
-      Serial.print(F("PAR (std dev) = ")); Serial.print(PARStd); Serial.println(F("(photons/m^2/s)"));
+      
+      
     return sensorMenu();
     break;
   case '7':
@@ -794,11 +811,55 @@ void sensorMenu(){
     break;
   case '8':
       Serial.println(); 
-      Serial.println(F("Measuring IMU (roll, pitch, and heading"));
+      Serial.println(F("Measuring IMU"));
       readIMU();
-      Serial.print(F("Roll = ")); Serial.print(Roll); Serial.println(F("( degrees)"));
-      Serial.print(F("Pitch = ")); Serial.print(Pitch); Serial.println(F("( degrees)"));
+      Serial.print(F("MagX = ")); Serial.print(MagX); Serial.println(F("( gaus)"));
+      Serial.print(F("MagY = ")); Serial.print(MagY); Serial.println(F("( gaus)"));
+      Serial.print(F("MagZ = ")); Serial.print(MagZ); Serial.println(F(" (gaus)"));
+
+      Serial.print(F("GyroX = ")); Serial.print(GyroX); Serial.println(F("( rad/s)"));
+      Serial.print(F("GyroY = ")); Serial.print(GyroY); Serial.println(F("( rad/s)"));
+      Serial.print(F("GyroZ = ")); Serial.print(GyroZ); Serial.println(F(" (rad/s)"));
+
+      Serial.print(F("AccelX = ")); Serial.print(AccelX); Serial.println(F("( m/s^2)"));
+      Serial.print(F("AccelY = ")); Serial.print(AccelY); Serial.println(F("( m/s^2)"));
+      Serial.print(F("AccelZ = ")); Serial.print(AccelZ); Serial.println(F(" (m/s^2)"));
+
       Serial.print(F("Heading = ")); Serial.print(Heading); Serial.println(F(" (degrees)"));
+      Serial.print(F("Panel Temperature = ")); Serial.print(PTemp); Serial.println(F(" (degrees C)"));
+
+    return sensorMenu();
+    break;
+  case '9':
+      Serial.println(); 
+      Serial.println(F("Measuring Wave Sensor (please wait)"));
+      Serial.println(F("NOTE: most wave parameters will be zero until a sample set has been acquired"));
+      Serial.println(F("A sample set is acquired every 10 - 30 minutes depending on the data rate"));
+      readWaves();
+      Serial.println(F("-----------------------------------------------------------------------"));
+      Serial.print(F("Wave Height = ")); Serial.print(WVHT); Serial.println(F(" (meters)"));
+      Serial.print(F("Wave Direction = ")); Serial.print(WVDir); Serial.println(F(" (degrees)"));
+      Serial.print(F("Wave Period = ")); Serial.print(WVPeriod); Serial.println(F(" (seconds)"));
+      Serial.print(F("Buoy Heading = ")); Serial.print(WVHeading); Serial.println(F(" (degrees)")); 
+      Serial.println(F("-----------------------------------------------------------------------"));     
+    return sensorMenu();
+    break; 
+  case 'W':
+      readRawWave();
+    return sensorMenu();
+    break; 
+  case 'L':
+      Serial.println(F("Reading the light sensor (please wait)"));
+      readLight();
+      Serial.println(F("-----------------------------------------------------------------------"));
+      Serial.print(F("PAR Avg = ")); Serial.print(paraAvg); Serial.println(F(" mV"));
+      Serial.print(F("PAR Std = ")); Serial.print(paraStd); Serial.println(F(" mV"));
+      Serial.print(F("IR Avg = ")); Serial.print(IRAvg); Serial.println(F(" mV"));
+      Serial.print(F("IR Std = ")); Serial.print(IRStd); Serial.println(F(" mV"));
+      Serial.print(F("UV Avg = ")); Serial.print(UVAvg); Serial.println(F(" mV"));
+      Serial.print(F("UV Std = ")); Serial.print(UVStd); Serial.println(F(" mV"));
+      Serial.print(F("Temperature = ")); Serial.print(LightTemp,4); Serial.println(F(" degrees C"));
+      Serial.println(F("-----------------------------------------------------------------------"));  
     return sensorMenu();
     break; 
   case '*':

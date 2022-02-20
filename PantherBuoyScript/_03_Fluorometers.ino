@@ -19,96 +19,98 @@ float FluorRead(int pin) {
 
 //function to read the chlorophyll fluorometer
 void readChl() {
-  tcaselect(7);
-  mcp.pinMode(8, OUTPUT); //Controls relay to turn on chl fluorometer
-  mcp.digitalWrite(8, HIGH);
-  delay(100);
-
-  //Set gain to 100X
-  mcp.pinMode(0, INPUT); //To be floating for 100X gain
-  mcp.pinMode(1, OUTPUT); //Grounded for 100X gain
-  mcp.digitalWrite(1, LOW);
-  GainVal = 0.01; //multiply by 0.01 for to normalize the reading by gain value of 100X
-  delay(100);  //required after changing gains
-  FluorRead(ChlPin);
-
-  //auto gain
-  if (FluorAvg < 4400) {
-    ChlAvg = FluorAvg * GainVal;
-    ChlStd = FluorStd * GainVal;
-  }
-  if (FluorAvg > 4400) {
-    //decrease gain to 10X
-    mcp.pinMode(0, OUTPUT);
-    mcp.pinMode(1, INPUT);
-    mcp.digitalWrite(0, LOW);
+  unsigned int ChlNowTime = millis();
+  unsigned int ChlInterval = 10000; //Give sensor 10 seconds to get data otherwise move on
+  while (ChlNowTime + ChlInterval > millis()){
+    tcaselect(7);
+    mcp.pinMode(9, OUTPUT); //Controls relay to turn on chl fluorometer
+    mcp.digitalWrite(9, HIGH);
     delay(100);
-    GainVal = 0.1;
-    //get average
-    FluorRead(ChlPin);
-    ChlAvg = FluorAvg * GainVal;
-    ChlStd = FluorStd * GainVal;
-  }
 
-  if (FluorAvg > 4400) {
-    //decrease gain to 1X by floating both pins 5 and 6 on fluorometer
-    GainVal = 1;
-    mcp.pinMode(0, INPUT);
-    mcp.pinMode(1, INPUT);
-    delay(100);
+    //Set gain to 100X
+    mcp.pinMode(0, INPUT); //To be floating for 100X gain
+    mcp.pinMode(1, OUTPUT); //Grounded for 100X gain
+    mcp.digitalWrite(1, LOW);
+    GainVal = 0.01; //multiply by 0.01 for to normalize the reading by gain value of 100X
+    delay(100);  //required after changing gains
     FluorRead(ChlPin);
-    ChlAvg = FluorAvg * GainVal;
-    ChlStd = FluorStd * GainVal;
+
+    //auto gain
+    if (FluorAvg < 4400) {
+      ChlAvg = FluorAvg * GainVal;
+      ChlStd = FluorStd * GainVal;
+    }
+    if (FluorAvg > 4400) {
+      //decrease gain to 10X
+      mcp.pinMode(0, OUTPUT);
+      mcp.pinMode(1, INPUT);
+      mcp.digitalWrite(0, LOW);
+      delay(100);
+      GainVal = 0.1;
+      //get average
+      FluorRead(ChlPin);
+      ChlAvg = FluorAvg * GainVal;
+      ChlStd = FluorStd * GainVal;
+    }
+
+    if (FluorAvg > 4400) {
+      //decrease gain to 1X by floating both pins 5 and 6 on fluorometer
+      GainVal = 1;
+      mcp.pinMode(0, INPUT);
+      mcp.pinMode(1, INPUT);
+      delay(100);
+      FluorRead(ChlPin);
+      ChlAvg = FluorAvg * GainVal;
+      ChlStd = FluorStd * GainVal;
+    }
   }
-  
-  tcaselect(7);
-  mcp.digitalWrite(8, LOW);
 }
-
 
 //function to read phycocyanin fluorometer
 void readPhyco() {
-  tcaselect(7);
-  mcp.pinMode(9, OUTPUT); //Controls relay to turn on phyco fluorometer
-  mcp.digitalWrite(9, HIGH);
-  delay(100);
-
-  //Set gain to 100X
-  mcp.pinMode(2, INPUT); //To be floating for 100X gain
-  mcp.pinMode(3, OUTPUT); //Grounded for 100X gain
-  mcp.digitalWrite(1, LOW);
-  GainVal = 0.01; //multiply by 0.01 for to normalize the reading by gain value of 100X
-  delay(100);  //required after changing gains
-  FluorRead(PhycoPin);
-
-  //auto gain
-  if (FluorAvg < 4400) {
-    PhycoAvg = FluorAvg * GainVal;
-    PhycoStd = FluorStd * GainVal;
-  }
-  if (FluorAvg > 4400) {
-    //decrease gain to 10X
-    mcp.pinMode(2, OUTPUT);
-    mcp.pinMode(3, INPUT);
-    mcp.digitalWrite(0, LOW);
+  unsigned int PhycoNowTime = millis();
+  unsigned int PhycoInterval = 10000; //Give sensor 10 seconds to get data otherwise move on
+  while (PhycoNowTime + PhycoInterval > millis()){
+    tcaselect(7);
+    mcp.pinMode(9, OUTPUT); //Controls relay to turn on phyco fluorometer
+    mcp.digitalWrite(9, HIGH);
     delay(100);
-    GainVal = 0.1;
-    //get average
-    FluorRead(PhycoPin);
-    PhycoAvg = FluorAvg * GainVal;
-    PhycoStd = FluorStd * GainVal;
-  }
 
-  if (FluorAvg > 4400) {
-    //decrease gain to 1X by floating both pins 5 and 6 on fluorometer
-    GainVal = 1;
-    mcp.pinMode(0, INPUT);
-    mcp.pinMode(1, INPUT);
-    delay(100);
+    //Set gain to 100X
+    mcp.pinMode(2, INPUT); //To be floating for 100X gain
+    mcp.pinMode(3, OUTPUT); //Grounded for 100X gain
+    mcp.digitalWrite(1, LOW);
+    GainVal = 0.01; //multiply by 0.01 for to normalize the reading by gain value of 100X
+    delay(100);  //required after changing gains
     FluorRead(PhycoPin);
-    PhycoAvg = FluorAvg * GainVal;
-    PhycoStd = FluorStd * GainVal;
+
+    //auto gain
+    if (FluorAvg < 4400) {
+      PhycoAvg = FluorAvg * GainVal;
+      PhycoStd = FluorStd * GainVal;
+    }
+    if (FluorAvg > 4400) {
+      //decrease gain to 10X
+      mcp.pinMode(2, OUTPUT);
+      mcp.pinMode(3, INPUT);
+      mcp.digitalWrite(0, LOW);
+      delay(100);
+      GainVal = 0.1;
+      //get average
+      FluorRead(PhycoPin);
+      PhycoAvg = FluorAvg * GainVal;
+      PhycoStd = FluorStd * GainVal;
+    }
+
+    if (FluorAvg > 4400) {
+      //decrease gain to 1X by floating both pins 5 and 6 on fluorometer
+      GainVal = 1;
+      mcp.pinMode(0, INPUT);
+      mcp.pinMode(1, INPUT);
+      delay(100);
+      FluorRead(PhycoPin);
+      PhycoAvg = FluorAvg * GainVal;
+      PhycoStd = FluorStd * GainVal;
+    }
   }
-  tcaselect(7);
-  mcp.digitalWrite(9, LOW);
 }

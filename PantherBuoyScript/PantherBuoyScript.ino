@@ -6,6 +6,11 @@ menu is provided that accepts user input.
 Author: Todd Miller, University of Wisconsin - Milwaukee
 
 This is a work in progress!
+
+UART Mux Selections:
+RS232-1 (TX1/RX1): E = LOW, S0 = HIGH, S1 = LOW
+RS232-2 (TX2/RX2): E = LOW, S0 = LOW, S1 = HIGH 
+GPS: E = E = LOW, S1 = LOW, S0 = LOW
 /*********************************************************************************************/
 #define TINY_GSM_MODEM_SIM800
 #include <OneWire.h>
@@ -24,16 +29,21 @@ This is a work in progress!
 #include "sdios.h"
 #include "Adafruit_BME680.h"
 #include <Adafruit_SleepyDog.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_LIS3MDL.h>
+#include <Adafruit_ADS1015.h>
+#include "Adafruit_MCP9808.h"
 /********************************Change options below******************************************/
 /***************************These can be changed/overwritten in the user menu*******************/
 //Minutes between scans (as milliseconds). 
-long Interval = 1000 * 60 * 2;
+long Interval = 1000 * 60 * 5;
 
 //Should LCD messenges be turned on? 0 = No, anything larger than 0 = yes.
 int doLCD = 1;
 
 //Should verbose reporting to serial monitor be turned on? 0 = No, anything larger than 0 = yes.
-int Verbose = 0;
+int Verbose = 1;
 
 //Should the program wait to get GPS fix? 0 = No, anything larger than 0 = yes.
 int GPSHold = 0;
@@ -75,6 +85,14 @@ Adafruit_BME680 bme;
 
 //Define analog pin for PAR sensor
 #define PARpin A2
+
+//Mag, gyro, and accelerometer
+Adafruit_LIS3MDL lis3mdl;
+Adafruit_MPU6050 mpu;
+
+//ADS1115 and MCP99808 for light sensor
+Adafruit_ADS1115 ads;
+Adafruit_MCP9808 tempsensor = Adafruit_MCP9808();
 
 /****************************************Define LCD**********************************************/
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
@@ -181,9 +199,9 @@ TinyGsm modem(SerialAT);
 float Temp[NSENSORS], TempF[NSENSORS];
 #define ONE_WIRE_BUS 6 //Temp chain on digital pin 6
 OneWire oneWire(ONE_WIRE_BUS);
-/****************************************Define RDO Pro Sensor ***********************************/
-#define RDOpin 11        
-SDI12 sdi12(RDOpin);
+/****************************************Define sdi12 sensors (RDO Pro & ATMOS 22 ***************/
+#define sdi12pin 11        
+SDI12 sdi12(sdi12pin);
 /****************************************Define Fluorometer Sensor Pins***************************/
 const int PhycoPin = A0;
 const int ChlPin = A1;
@@ -198,17 +216,18 @@ char url1[1000];
 char url2[1000];
 char url[4000];
 
-//Variables for saving and writing data to SD card
-char SDData[1200];
-char TimeDat[100];
-char IMUData[400];
-char ModemData[100];
-char GPSData[500];
+char SDData[550];
+char TimeDat[30];
+char ModemData[20];
+char GPSData[100];
 char BattData[20];
-char FluorData[20];
-char PARData[20];
-char TempData[100];
-char dataFile[] = "Data.csv"; //This can be overwritten by user menu
+char FluorData[50];
+char PARData[24];
+char TempData[120];
+char WindData[80];
+char WaveData[200];
+
+char dataFile[] = "STRG2022.csv"; //This can be overwritten by user menu
 
 //Real time clock (RTC) date and time variables
 byte year;
@@ -233,19 +252,19 @@ int Second;
 //Sensor data variables
 float Batv; //Battery voltage
 float mvolts; //millivolts read from any analog pin
-float Lat;  //GPS latitude
-float Lon;  //GPS longitude
-float Sat;  //Number of GPS satelites connected
-float Alt;  //GPS altitude
-float Course; //GPS course over ground
-float Speed;  //GPS speed over ground
-float Hop;  //GPS horizontal dilution of precision
-int GPSYear; //Current year reported by GPS
-int GPSMonth; //Current month reported by GPS
-int GPSDay;   //Current day reported by GPS
-int GPSHour;  //Current hour reported by GPS
-int GPSMin;   //Minutes reported by GPS
-int GPSSec;   //Seconds reported by GPS
+float Lat = 0;  //GPS latitude
+float Lon = 0;  //GPS longitude
+float Sat = 0;  //Number of GPS satelites connected
+float Alt = 0;  //GPS altitude
+float Course = 0; //GPS course over ground
+float Speed = 0;  //GPS speed over ground
+float Hop = 0;  //GPS horizontal dilution of precision
+int GPSYear = 0; //Current year reported by GPS
+int GPSMonth = 0; //Current month reported by GPS
+int GPSDay = 0;   //Current day reported by GPS
+int GPSHour = 0;  //Current hour reported by GPS
+int GPSMin = 0;   //Minutes reported by GPS
+int GPSSec = 0;   //Seconds reported by GPS
 float AccelX;
 float AccelY;
 float AccelZ;
@@ -257,6 +276,7 @@ unsigned int MagN = 50;
 float GyroX;
 float GyroY;
 float GyroZ;
+float PTemp;
 float Roll;
 float Pitch;
 float Heading;
@@ -270,34 +290,61 @@ float ChlAvg;
 float ChlStd;
 float FluorAvg;
 float FluorStd;
-float PARAvg = 0.000;
-float PARStd = 0.000;
 float ATemp;
 float Pressure;
 float Humidity;
 float Gas;
 float BMEAlt;
 
+float LightRef;
+float PARa0;
+float PARa;
+float paraAvg;
+float paraStd;
+
+float IR0;
+float IR;
+float IRAvg;
+float IRStd;
+
+float UV0;
+float UV;
+float UVAvg;
+float UVStd;
+
+float LightTemp;
+
 float DO;
 float DOS;
 float RDOTemp;
 
+float WVHeading = 0.0;
+float WVHT = 0.0;
+float WVPeriod = 0.0;
+float WVDir = 0.0;
+float MeanWVDir = 0.0;
+float GN = 0.0;
+float DP1 = 0.0;
+float DP2 = 0.0;
+
 //Variables to hold statistics calculated by statistic library
 Statistic fluorStats;
-Statistic PARStats;
+Statistic paraStats;
+Statistic irStats;
+Statistic uvStats;
 
 //Wind sensor defines and variables
-#define WindSensorPin (11) //Wind speed measured on pin D11
-volatile unsigned long Rotations; // cup rotation counter used in interrupt routine
-volatile unsigned long ContactBounceTime; // Timer to avoid contact bounce in interrupt routine
 float WindSpeed; // speed miles per hour
-int VaneValue;// raw analog value from wind vane
-int WindDir;// translated 0 - 360 direction
-int CalDirection;// converted value with offset applied
-int LastValue;
+float WindDir;// translated 0 - 360 direction
+float Gust;
+float ATMOAirT;
+float ATMOX;
+float ATMOY;
+
+float ATMOresult[9] = {0};
+float TrueWindDir;// converted value with offset applied
 #define Offset 0;
 long previousMillis = 0;
-
 
 /*********************************Auxiliary Functions*******************/
 //Function to change ports on the I2C multiplexer
@@ -330,13 +377,20 @@ RTCZero rtc;
 //Variable to hold watchdog time
 int countdownMS;
 
-//Function to set all pins low on GPIO expander and thus all swtiched power rails
+//Function to set all pins low on GPIO expander except for 5VS1 and 3.3VS2 rails
 void pinsLow(){
-  for (int i = 0; i < 15; i++){
+  for (int i = 0; i < 7; i++){
     tcaselect(7);
     delay(100);
     mcp.digitalWrite(i,LOW);
+    delay(1000);
+  }
+  
+  for (int i = 9; i < 15; i++){
+    tcaselect(7);
     delay(100);
+    mcp.digitalWrite(i,LOW);
+    delay(1000);
   }
 }
 
@@ -350,10 +404,12 @@ void setup()
   Serial.println("Setting things up, please wait. Enter M now to bring up the main menu");
   SerialAT.begin(115200);
   Wire.begin();
+  mcp.begin();
   
   tcaselect(5);
   delay(100);
   u8g2.begin();
+
   //Splash screen
   u8g2.clearBuffer();
   u8g2.drawXBMP(0,0,panther_width, panther_height, panther_bits);
@@ -376,22 +432,35 @@ void setup()
   pinPeripheral(10, PIO_SERCOM);
   pinPeripheral(12, PIO_SERCOM);
 
+  
   sd.begin(chipSelect);
   SPI.begin();
   sdi12.begin();
-  mcp.begin();
+
+  ads.begin();
+  
   rtc.begin();
   createSDFile();
   //setupIMU();
 
   pinMode(9, OUTPUT);
   digitalWrite(9, LOW); //Set ATTiny low
-  delay(3000);
+
+  tcaselect(7);
+  mcp.pinMode(8,OUTPUT);
+  mcp.digitalWrite(8,HIGH); //Turn on +5VS1 rail permanently for wave and wind sensors
+  delay(100);
+
+  mcp.pinMode(13,OUTPUT);
+  mcp.digitalWrite(13,HIGH); //Turn on +3.3VS2 rail for GPS
+  delay(100);
+
   ss.begin(9600);
   u8g2.begin();
   readBat();
+  
   setupBME();
-
+  
   Serial.println("Close serial monitor before deploying or enter M for the main menu");
   Serial.print("Deployment in 20 seconds");
   staticTime = millis();
@@ -433,6 +502,11 @@ void setup()
   u8g2.clearBuffer();
   
   GPSON();
+  tcaselect(7);
+  delay(100);
+  mcp.pinMode(12, INPUT);
+
+  
   if (millis() < HoldTime) {
     if (GPSHold > 0) {\
       if (doLCD > 0) {
@@ -496,6 +570,9 @@ void setup()
     u8g2.sendBuffer();
     delay(5000);
   }
+
+  
+  
   previousMillis = Interval;
 }
 
@@ -503,6 +580,7 @@ void setup()
 /************************************************Main Program Loop***********************************************/
 void loop()
 {
+  
   tcaselect(5);
   u8g2.clearBuffer();
   u8g2.drawXBMP(0, 0, panther_width, panther_height, panther_bits);
@@ -540,25 +618,25 @@ void loop()
 
       sprintf(buf4, "%f", Temp[0]);
       u8g2.drawStr(0, 24, "WaterTemp(0m):"); u8g2.drawStr(85, 24, buf4),
-                   u8g2.sendBuffer();
+      u8g2.sendBuffer();
 
       sprintf(buf4, "%f", Temp[1]);
       u8g2.drawStr(0, 36, "WaterTemp(1m):"); u8g2.drawStr(85, 36, buf4),
-                   u8g2.sendBuffer();
+      u8g2.sendBuffer();
 
       sprintf(buf4, "%f", Temp[2]);
       u8g2.drawStr(0, 48, "WaterTemp(2m):"); u8g2.drawStr(85, 48, buf4),
-                   u8g2.sendBuffer();
+      u8g2.sendBuffer();
 
       sprintf(buf4, "%f", Temp[3]);
       u8g2.drawStr(0, 60, "WaterTemp(3m):"); u8g2.drawStr(85, 60, buf4),
-                   u8g2.sendBuffer();
+      u8g2.sendBuffer();
       delay(3000);
     }
 
 
     Serial.println("Temp chain data acquired.");
-    Serial.println("Reading IMU and Wind...");
+    Serial.println("Reading Wind and Waves...");
 
     if (doLCD > 0) {
       tcaselect(5);
@@ -566,17 +644,17 @@ void loop()
       u8g2.setFont(u8g2_font_t0_12_te);
       u8g2.drawStr(0, 12, "IMU Data");
       u8g2.sendBuffer();
-      u8g2.drawStr(0, 24, "Roll="); u8g2.drawStr(55, 24, itoa(Roll, buf, 10)); u8g2.drawStr(80, 24, "Degrees");
+      u8g2.drawStr(0, 24, "Wave Ht="); u8g2.drawStr(55, 24, itoa(WVHT, buf, 10)); u8g2.drawStr(80, 24, "Degrees");
       u8g2.sendBuffer();
-      u8g2.drawStr(0, 36, "Pitch="); u8g2.drawStr(55, 36, itoa(Pitch, buf, 10)); u8g2.drawStr(80, 36, "Degrees");
+      u8g2.drawStr(0, 36, "Wave Dir="); u8g2.drawStr(55, 36, itoa(WVDir, buf, 10)); u8g2.drawStr(80, 36, "Degrees");
       u8g2.sendBuffer();
-      u8g2.drawStr(0, 48, "Heading="); u8g2.drawStr(55, 48, itoa(Heading, buf, 10)); u8g2.drawStr(80, 48, "Degrees");
+      u8g2.drawStr(0, 48, "Heading="); u8g2.drawStr(55, 48, itoa(WVHeading, buf, 10)); u8g2.drawStr(80, 48, "Degrees");
       u8g2.sendBuffer();
       delay(4000);
     }
 
-    //readWindDir();
-    //readWindSpeed();
+    readWaves(); //read waves just before wind to get buoy heading so wind direction can be corrected
+    readWind();
 
     if (doLCD > 0) {
       tcaselect(5);
@@ -584,7 +662,7 @@ void loop()
       u8g2.setFont(u8g2_font_t0_12_te);
       u8g2.drawStr(0, 12, "Wind Data:");
       u8g2.sendBuffer();
-      u8g2.drawStr(0, 24, "WindDir="); u8g2.drawStr(60, 24, itoa(WindDir, buf, 10)); u8g2.drawStr(85, 24, "Degrees");
+      u8g2.drawStr(0, 24, "WindDir="); u8g2.drawStr(60, 24, itoa(TrueWindDir, buf, 10)); u8g2.drawStr(85, 24, "Degrees");
       u8g2.sendBuffer();
       u8g2.drawStr(0, 36, "WindSpd="); u8g2.drawStr(60, 36, itoa(WindSpeed, buf, 10)); u8g2.drawStr(85, 36, "MPH");
       u8g2.sendBuffer();
@@ -618,8 +696,6 @@ void loop()
       u8g2.sendBuffer();
       delay(4000);
     }
-
-
 
 
     //Serial.print(F("Free SRAM ")); Serial.println(freeMemory());
@@ -657,10 +733,9 @@ void loop()
 
     Serial.println("Reading DO");
     readDO();
+    Serial.println("Reading PAR and light sensor");
 
-    Serial.println("Reading PAR");
-
-    readPAR();
+    readLight();
 
     if (doLCD > 0) {
       tcaselect(5);
@@ -668,7 +743,11 @@ void loop()
       u8g2.setFont(u8g2_font_t0_12_te);
       u8g2.drawStr(0, 12, "PAR Data:");
       u8g2.sendBuffer();
-      u8g2.drawStr(0, 24, "PAR="); u8g2.drawStr(24, 24, itoa(PARAvg, buf, 10)); u8g2.drawStr(85, 24, "uE");
+      u8g2.drawStr(0, 24, "PAR="); u8g2.drawStr(24, 24, itoa(paraAvg, buf, 10)); u8g2.drawStr(85, 24, "uE");
+      u8g2.drawStr(0, 48, "DO Sat ="); u8g2.drawStr(70, 48, itoa(DOS, buf, 10)); u8g2.drawStr(100, 48, "%");
+      u8g2.sendBuffer();
+      u8g2.drawStr(0, 60, "DO ="); u8g2.drawStr(70, 60, itoa(DO, buf, 10)); u8g2.drawStr(100, 60, "mg/L");
+      u8g2.sendBuffer();
       u8g2.sendBuffer();
       delay(4000);
     }
@@ -692,6 +771,11 @@ void loop()
     SendData();
     //Serial.print(F("Free SRAM ")); Serial.println(freeMemory());
     pinsLow();
+    tcaselect(7);
+    mcp.pinMode(8,OUTPUT);
+    mcp.digitalWrite(8,HIGH); //Turn on +5VS1 rail permanently for wave and wind sensors
+    delay(100);
+    
     PrintResults();
     
     Serial.println("***********************************Finished sending data, modem is powered off**************");
