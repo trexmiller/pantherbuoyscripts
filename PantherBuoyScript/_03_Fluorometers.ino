@@ -1,4 +1,4 @@
-/*****************************************BME680 Functions**************************************
+/*******************************************************************************
 The functions below read the fluorometers with autogaining 
 *************************************************************************************************/
 //Generic Function to read a fluorometer, take average readings and standard deviation
