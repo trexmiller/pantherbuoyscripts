@@ -598,7 +598,7 @@ void loop()
       tcaselect(5);
       u8g2.clearBuffer();
       u8g2.setFont(u8g2_font_t0_12_te);
-      u8g2.drawStr(0, 12, "Reading sensors...");
+      u8g2.drawStr(0, 12, "Reading temp chain...");
       u8g2.sendBuffer();
       delay(1500);
     }
@@ -613,31 +613,33 @@ void loop()
       tcaselect(5);
       u8g2.clearBuffer();
       u8g2.setFont(u8g2_font_t0_12_te);
-      u8g2.drawStr(0, 12, "WTemp Data (4 nodes)");
-      u8g2.sendBuffer();
-
+  
       sprintf(buf4, "%f", Temp[0]);
-      u8g2.drawStr(0, 24, "WaterTemp(0m):"); u8g2.drawStr(85, 24, buf4),
+      u8g2.drawStr(0, 12, "WaterTemp(0m):"); u8g2.drawStr(85, 24, buf4),
       u8g2.sendBuffer();
 
       sprintf(buf4, "%f", Temp[1]);
-      u8g2.drawStr(0, 36, "WaterTemp(1m):"); u8g2.drawStr(85, 36, buf4),
+      u8g2.drawStr(0, 24, "WaterTemp(1m):"); u8g2.drawStr(85, 36, buf4),
       u8g2.sendBuffer();
 
       sprintf(buf4, "%f", Temp[2]);
-      u8g2.drawStr(0, 48, "WaterTemp(2m):"); u8g2.drawStr(85, 48, buf4),
+      u8g2.drawStr(0, 36, "WaterTemp(2m):"); u8g2.drawStr(85, 48, buf4),
       u8g2.sendBuffer();
 
       sprintf(buf4, "%f", Temp[3]);
+      u8g2.drawStr(0, 48, "WaterTemp(3m):"); u8g2.drawStr(85, 60, buf4),
+      u8g2.sendBuffer();
+
+      sprintf(buf4, "%f", Temp[4]);
       u8g2.drawStr(0, 60, "WaterTemp(3m):"); u8g2.drawStr(85, 60, buf4),
       u8g2.sendBuffer();
-      delay(3000);
     }
-
 
     Serial.println("Temp chain data acquired.");
     Serial.println("Reading Wind and Waves...");
-
+    readWaves(); //read waves just before wind to get buoy heading so wind direction can be corrected
+    readWind();
+    
     if (doLCD > 0) {
       tcaselect(5);
       u8g2.clearBuffer();
@@ -652,9 +654,6 @@ void loop()
       u8g2.sendBuffer();
       delay(4000);
     }
-
-    readWaves(); //read waves just before wind to get buoy heading so wind direction can be corrected
-    readWind();
 
     if (doLCD > 0) {
       tcaselect(5);
